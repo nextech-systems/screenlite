@@ -41,6 +41,10 @@ export class SignupUsecase {
 
         const passwordHash = await passwordHasher.hash(userPassword.toString())
 
+        // First user to register is assigned the admin role
+        const userCount = await userRepository.count()
+        const role = userCount === 0 ? UserRole.ADMIN : UserRole.USER
+
         const user = new User({
             id: uuidv4(),
             email: data.email,
@@ -50,7 +54,7 @@ export class SignupUsecase {
             profilePhotoPath: null,
             deletionRequestedAt: null,
             deletedAt: null,
-            role: UserRole.USER,
+            role: role,
             version: 1,
         })
 

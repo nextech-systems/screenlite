@@ -8,4 +8,5 @@ export interface IUserRepository {
     findAll(queryOptions?: UsersQueryOptionsDTO): Promise<PaginationResponse<User>>
     save(user: User): Promise<void>
     countByEmail(email: string): Promise<number>
+    count(): Promise<number>
 }
