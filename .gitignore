@@ -1,2 +1,5 @@
 .env
 node_modules
+# Local FFmpeg test media
+ffmpeg-service/test.mp4
+ffmpeg-service/whatsapp.mp4

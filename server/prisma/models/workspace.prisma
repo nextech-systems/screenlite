@@ -20,4 +20,5 @@ model Workspace {
     links              Link[]
     storageUsage       WorkspaceStorageUsage?
     workspaceApiTokens WorkspaceApiToken[]
+    dashboards          Dashboard[]
 }

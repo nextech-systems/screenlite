@@ -191,7 +191,7 @@ const playlistRoutes = async (fastify: FastifyInstance) => {
             const items = await prisma.playlistItem.findMany({
                 where: { playlistId: request.params.playlistId },
                 orderBy: { order: 'asc' },
-                include: { file: true, nestedPlaylist: true }
+                include: { file: true, nestedPlaylist: true, link: true }
             })
             const serialized = items.map((item: any) => ({
                 ...item,
@@ -212,16 +212,38 @@ const playlistRoutes = async (fastify: FastifyInstance) => {
                     playlistLayoutSectionId: z.string(),
                     fileId: z.string().nullable().optional(),
                     nestedPlaylistId: z.string().nullable().optional(),
+                    linkId: z.string().nullable().optional(),
+                    link: z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        type: z.string(),
+                        url: z.string(),
+                        refreshInterval: z.number().nullable().optional(),
+                        defaultDuration: z.number().nullable().optional(),
+                    }).nullable().optional(),
                     order: z.number(),
                 }))
             }),
         },
         handler: async (request, reply) => {
             const { playlistId } = request.params
+            const workspaceId = request.params.workspaceId
+
+            // Upsert Link records for any link type items
+            for (const item of request.body.items) {
+                if (item.type === 'link' && item.link) {
+                    await prisma.$executeRaw`
+                        INSERT INTO "Link" (id, "workspaceId", name, type, url, "refreshInterval", "defaultDuration", "createdAt", "updatedAt")
+                        VALUES (${item.link.id}, ${workspaceId}, ${item.link.name}, ${item.link.type}, ${item.link.url}, ${item.link.refreshInterval ?? null}, ${item.link.defaultDuration ?? null}, NOW(), NOW())
+                        ON CONFLICT (id) DO UPDATE SET name = ${item.link.name}, url = ${item.link.url}, "updatedAt" = NOW()
+                    `
+                }
+            }
+
             await prisma.playlistItem.deleteMany({ where: { playlistId } })
             const created = await prisma.$transaction(
                 request.body.items.map(item => prisma.playlistItem.create({
-                    data: { id: item.id ?? uuidv4(), playlistId, type: item.type, duration: item.duration ?? null, playlistLayoutSectionId: item.playlistLayoutSectionId, fileId: item.fileId ?? null, nestedPlaylistId: item.nestedPlaylistId ?? null, order: item.order, updatedAt: new Date() }
+                    data: { id: item.id ?? uuidv4(), playlistId, type: item.type, duration: item.duration ?? null, playlistLayoutSectionId: item.playlistLayoutSectionId, fileId: item.fileId ?? null, nestedPlaylistId: item.nestedPlaylistId ?? null, linkId: item.linkId ?? null, order: item.order, updatedAt: new Date() }
                 }))
             )
 
@@ -236,9 +258,10 @@ const playlistRoutes = async (fastify: FastifyInstance) => {
                     WHERE pl.id = (SELECT "playlistLayoutId" FROM "Playlist" WHERE id = ${playlistId})
                 `
                 const items: any[] = await prisma.$queryRaw`
-                    SELECT pi.*, f.id as file_id, f.name as file_name, f."mimeType", f.path
+                    SELECT pi.*, f.id as file_id, f.name as file_name, f."mimeType", f.path, l.id as link_id, l.name as link_name, l.type as link_type, l.url as link_url, l."refreshInterval" as link_refresh_interval
                     FROM "PlaylistItem" pi
                     LEFT JOIN "File" f ON f.id = pi."fileId"
+                    LEFT JOIN "Link" l ON l.id = pi."linkId"
                     WHERE pi."playlistId" = ${playlistId}
                     ORDER BY pi."order" ASC
                 `
@@ -267,6 +290,13 @@ const playlistRoutes = async (fastify: FastifyInstance) => {
                                 name: item.file_name,
                                 mimeType: item.mimeType,
                                 path: item.path,
+                            } : null,
+                            link: item.link_id ? {
+                                id: item.link_id,
+                                name: item.link_name,
+                                type: item.link_type,
+                                url: item.link_url,
+                                refreshInterval: item.link_refresh_interval,
                             } : null,
                         })),
                     }

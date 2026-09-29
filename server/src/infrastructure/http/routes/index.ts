@@ -18,6 +18,7 @@ import fileRoutes from '@/modules/file/infrastructure/routes/file.routes.ts'
 import fileManagementRoutes from '@/modules/file/infrastructure/routes/file-management.routes.ts'
 import playlistRoutes from '@/modules/playlist/infrastructure/routes/playlist.routes.ts'
 import playlistGlobalRoutes from '@/modules/playlist/infrastructure/routes/playlist-global.routes.ts'
+import dashboardRoutes from '@/modules/dashboard/infrastructure/routes/dashboard.routes.ts'
 import playlistScheduleRoutes from '@/modules/playlist/infrastructure/routes/playlist-schedule.routes.ts'
 import layoutRoutes from '@/modules/layout/infrastructure/routes/layout.routes.ts'
 import folderRoutes from '@/modules/folder/infrastructure/routes/folder.routes.ts'
@@ -40,6 +41,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
     fastify.register(fileManagementRoutes, { prefix: '/api/workspaces/:workspaceId/files' })
     fastify.register(playlistRoutes, { prefix: '/api/workspaces/:workspaceId/playlists' })
     fastify.register(playlistGlobalRoutes, { prefix: '/api/playlists' })
+    fastify.register(dashboardRoutes, { prefix: '/api/workspaces/:workspaceId/dashboards' })
     fastify.register(playlistScheduleRoutes, { prefix: '/api/workspaces/:workspaceId/playlist-schedules' })
     fastify.register(layoutRoutes, { prefix: '/api/workspaces/:workspaceId/layouts' })
     fastify.register(folderRoutes, { prefix: '/api/workspaces/:workspaceId/folders' })

@@ -18,12 +18,22 @@ type FileItem = {
     path: string
 }
 
+type LinkItem = {
+    id: string
+    name: string
+    type: string
+    url: string
+    refreshInterval: number | null
+    defaultDuration: number | null
+}
+
 type PlaylistItem = {
     id: string
     type: string
     duration: number | null
     playlistLayoutSectionId: string | null
     file: FileItem | null
+    link: LinkItem | null
 }
 
 type Layout = {
@@ -81,6 +91,7 @@ const SectionPlayer = ({ section, items, resolution }: {
     useEffect(() => {
         if (sectionItems.length === 0) return
         const item = sectionItems[currentIndex]
+        if (item.file?.mimeType.startsWith('video/')) return
         const duration = (item.duration ?? 10) * 1000
         const timer = setTimeout(() => {
             setCurrentIndex(prev => (prev + 1) % sectionItems.length)
@@ -107,18 +118,34 @@ const SectionPlayer = ({ section, items, resolution }: {
     }
 
     const current = sectionItems[currentIndex]
+    if (!current) return <div style={style} />
 
     return (
         <div style={style}>
-            {current.file && current.file.mimeType.startsWith('video/') ? (
+            {current.type === 'link' && current.link ? (
+                <iframe
+                    key={current.id}
+                    src={current.link.url}
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                    allow="autoplay"
+                />
+            ) : current.file && current.file.mimeType.startsWith('video/') ? (
                 <video
                     key={current.id}
                     src={getFileUrl(current.file.path)}
                     autoPlay
                     muted
+                    playsInline
                     loop
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onEnded={() => setCurrentIndex(prev => (prev + 1) % sectionItems.length)}
+                    onCanPlay={(e) => {
+                        e.currentTarget.play().catch(() => {})
+                    }}
+                    onEnded={(e) => {
+                        const v = e.currentTarget
+                        v.currentTime = 0
+                        v.play().catch(() => {})
+                    }}
                     onError={() => {
                         setTimeout(() => {
                             setCurrentIndex(prev => (prev + 1) % sectionItems.length)
@@ -188,7 +215,6 @@ export const PlayerPage = () => {
                         }
                     }
                 } else if (msg.type === 'auth_error') {
-                    // Don't show error if we have cached content
                     const cached = loadPlaylistFromCache()
                     if (!cached) setStatus('auth_error')
                 } else if (msg.type === 'playlist_updated') {
@@ -203,7 +229,6 @@ export const PlayerPage = () => {
             }
 
             ws.onclose = () => {
-                // Keep playing cached content on disconnect
                 const cached = loadPlaylistFromCache()
                 if (cached && status !== 'connected') {
                     setPlaylist(cached)
@@ -212,7 +237,6 @@ export const PlayerPage = () => {
                 setTimeout(connect, 3000)
             }
 
-            // Send heartbeat every 25 seconds to update online status
             const heartbeatInterval = setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({ type: 'heartbeat' }))

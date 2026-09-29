@@ -16,6 +16,8 @@ export const PlaylistSectionItemCard = forwardRef<HTMLDivElement, PlaylistSectio
         switch (item.type) {
             case 'file':
                 return SectionItemsFileItemCardBody
+            case 'link':
+                return SectionItemsFileItemCardBody
             default:
                 return () => <div>Unknown type</div>
         }

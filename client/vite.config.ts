@@ -1,9 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import legacy from '@vitejs/plugin-legacy'
 import path from 'path'
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        legacy({
+            targets: ['chrome >= 62', 'android >= 8'],
+        })
+    ],
+    build: {
+        target: ['es2015', 'chrome62']
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
@@ -25,12 +34,12 @@ export default defineConfig({
         } : false,
         proxy: {
             '/ws': {
-                target: 'http://11.0.11.37:3000',
+                target: 'http://server:3000',
                 ws: true,
                 changeOrigin: true,
             },
             '/api': {
-                target: 'http://11.0.11.37:3000',
+                target: 'http://server:3000',
                 changeOrigin: true,
             }
         }

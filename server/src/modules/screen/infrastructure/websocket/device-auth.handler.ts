@@ -55,9 +55,13 @@ export const createDeviceAuthHandler = (
             ` : []
 
             const items: any[] = await prisma.$queryRaw`
-                SELECT pi.*, f.id as file_id, f.name as file_name, f."mimeType", f.path
+                SELECT pi.*, 
+                    f.id as file_id, f.name as file_name, f."mimeType", f.path,
+                    l.id as link_id, l.name as link_name, l.type as link_type, l.url as link_url, 
+                    l."refreshInterval" as link_refresh_interval, l."defaultDuration" as link_default_duration
                 FROM "PlaylistItem" pi
                 LEFT JOIN "File" f ON f.id = pi."fileId"
+                LEFT JOIN "Link" l ON l.id = pi."linkId"
                 WHERE pi."playlistId" = ${playlistRow.id}
                 ORDER BY pi."order" ASC
             `
@@ -81,6 +85,14 @@ export const createDeviceAuthHandler = (
                         name: item.file_name,
                         mimeType: item.mimeType,
                         path: item.path,
+                    } : null,
+                    link: item.link_id ? {
+                        id: item.link_id,
+                        name: item.link_name,
+                        type: item.link_type,
+                        url: item.link_url,
+                        refreshInterval: item.link_refresh_interval,
+                        defaultDuration: item.link_default_duration,
                     } : null,
                 })),
             }

@@ -47,7 +47,8 @@ services:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 10s
       timeout: 10s
-      retries: 10
+      retries: 5
+      start_period: 30s
 
   prisma-studio:
     image: node:lts-alpine3.17
@@ -110,13 +111,14 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: ./docker/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        VITE_API_URL: https://screenlite.ddns.net/api
     restart: always
     container_name: screenlite-client
     ports:
       - "${CLIENT_PORT:-3001}:3001"
     volumes:
-      - ./client:/app
       - /app/node_modules
     environment:
       - NODE_ENV=${NODE_ENV:-development}

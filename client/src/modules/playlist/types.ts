@@ -44,13 +44,13 @@ export type RestorePlaylistsRequestData = {
 }
 
 export type Weekday =
-	| 'MONDAY'
-	| 'TUESDAY'
-	| 'WEDNESDAY'
-	| 'THURSDAY'
-	| 'FRIDAY'
-	| 'SATURDAY'
-	| 'SUNDAY';
+        | 'MONDAY'
+        | 'TUESDAY'
+        | 'WEDNESDAY'
+        | 'THURSDAY'
+        | 'FRIDAY'
+        | 'SATURDAY'
+        | 'SUNDAY';
 
 export type PlaylistSchedule = {
     id: string
@@ -96,7 +96,16 @@ export type RemoveScreensFromPlaylistRequestData = {
     screenIds: string[]
 }
 
-export type PlaylistItemType = 'file' | 'nested_playlist'
+export type PlaylistItemType = 'file' | 'nested_playlist' | 'link'
+
+export type LinkItem = {
+    id: string
+    name: string
+    type: string
+    url: string
+    refreshInterval: number | null
+    defaultDuration: number | null
+}
 
 export type PlaylistItem = {
     id: string
@@ -111,6 +120,8 @@ export type PlaylistItem = {
     nestedPlaylist: Playlist | null
     fileId: string | null
     file: WorkspaceFile | null
+    linkId: string | null
+    link: LinkItem | null
 }
 
 export type PlaylistContentManagerItem = Omit<PlaylistItem, 'createdAt' | 'updatedAt' | 'playlistId'>
@@ -123,4 +134,9 @@ export type FilePlaylistItem = PlaylistItem & {
 export type SubplaylistPlaylistItem = PlaylistItem & {
     nestedPlaylistId: string
     nestedPlaylist: Playlist
+}
+
+export type LinkPlaylistItem = PlaylistItem & {
+    linkId: string
+    link: LinkItem
 }
