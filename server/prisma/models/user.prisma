@@ -27,4 +27,5 @@ model User {
     twoFactorRecoveryCodes  TwoFactorRecoveryCode[]
     userCredentials         UserCredential[]
     initiator               Initiator?
+    dashboards              Dashboard[]
 }

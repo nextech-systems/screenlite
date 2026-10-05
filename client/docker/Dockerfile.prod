@@ -1,0 +1,16 @@
+FROM node:slim
+WORKDIR /app
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+RUN npm install -g serve
+COPY package*.json ./
+RUN npm install
+RUN npm install @vitejs/plugin-legacy@5 terser --save-dev --legacy-peer-deps
+COPY . .
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+RUN npx vite build
+EXPOSE 3001
+CMD ["serve", "-s", "dist", "-l", "3001"]

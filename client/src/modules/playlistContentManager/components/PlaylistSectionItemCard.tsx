@@ -14,7 +14,9 @@ interface PlaylistSectionItemCardProps extends React.HTMLAttributes<HTMLDivEleme
 export const PlaylistSectionItemCard = forwardRef<HTMLDivElement, PlaylistSectionItemCardProps>(({ item, isDragging, ...props }, ref) => {
     const getCardBodyComponent = () => {
         switch (item.type) {
-            case 'File':
+            case 'file':
+                return SectionItemsFileItemCardBody
+            case 'link':
                 return SectionItemsFileItemCardBody
             default:
                 return () => <div>Unknown type</div>

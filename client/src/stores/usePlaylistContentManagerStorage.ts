@@ -1,5 +1,5 @@
 import { WorkspaceFile } from '@modules/file/types'
-import { PlaylistContentManagerItem, PlaylistItemType } from '@modules/playlist/types'
+import { LinkItem, PlaylistContentManagerItem, PlaylistItemType } from '@modules/playlist/types'
 import { PlaylistContentService } from '@modules/playlistContentManager/services/PlaylistContentService'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -19,6 +19,7 @@ type State = {
 type Action = {
     addItemsToCurrentLayoutSection: (type: PlaylistItemType, items: AddableItem) => void
     addItemsToLayoutSection: (sectionId: string | null, type: PlaylistItemType, items: AddableItem) => void
+    addLinkToCurrentLayoutSection: (link: LinkItem, duration?: number) => void
     checkItemsModified: (initialItems: Item[]) => void
     clearState: () => void
     getLayoutSectionItems: (sectionId: string) => Item[] | null
@@ -29,6 +30,7 @@ type Action = {
     updateCurrentLayoutSectionItems: () => void
     getUnusedItems: (items: Item[], existingsectionIds: string[]) => Item[]
     removeItems: (id: string | string[]) => void
+    updateItemDuration: (id: string, duration: number) => void
 }
 
 const emptyState = {
@@ -55,11 +57,8 @@ export const usePlaylistContentManagerStorage = create<State & Action>()(
 
             checkItemsModified: (initialItems) => {
                 const currentItems = get().items
-
                 if (currentItems === null) return
-
                 const isModified = !PlaylistContentService.arePlaylistItemsEqual(initialItems, currentItems)
-
                 set({ isModified })
             },
 
@@ -83,29 +82,24 @@ export const usePlaylistContentManagerStorage = create<State & Action>()(
 
             updateCurrentLayoutSectionItems: () => {
                 const currentLayoutSection = get().currentLayoutSection
-
                 if (currentLayoutSection) {
                     const sectionItems = get().getLayoutSectionItems(currentLayoutSection)
-
                     set({ currentLayoutSectionItems: sectionItems })
                 }
             },
 
             getLayoutSectionItems: (sectionId) => {
                 const items = get().items
-
                 if (!items || !sectionId) return null
                 return filterItemsBySection(items, sectionId)
             },
 
             reorderLayoutSectionItems: (sectionId, items) => set((state) => {
                 const otherItems = state.items?.filter(item => item.playlistLayoutSectionId !== sectionId) || []
-
                 const reorderedSectionItems = items.map((item, index) => ({
                     ...item,
                     order: index + 1,
                 }))
-
                 return {
                     items: [...otherItems, ...reorderedSectionItems],
                 }
@@ -113,18 +107,14 @@ export const usePlaylistContentManagerStorage = create<State & Action>()(
 
             addItemsToCurrentLayoutSection: (type, items) => {
                 const currentLayoutSection = get().currentLayoutSection
-
                 get().addItemsToLayoutSection(currentLayoutSection, type, items)
             },
 
             addItemsToLayoutSection: (sectionId, type, items) => set((state) => {
                 if (!sectionId || !state.items) return state
-
                 const sectionItems = get().getLayoutSectionItems(sectionId) ?? []
                 const maxOrder = getMaxOrderForSection(sectionItems)
-
                 const itemsArray = Array.isArray(items) ? items : [items]
-
                 const newItems = (() => {
                     switch (type) {
                         case 'file':
@@ -133,24 +123,37 @@ export const usePlaylistContentManagerStorage = create<State & Action>()(
                             return []
                     }
                 })()
-
                 return {
                     items: [...state.items, ...newItems],
                 }
             }),
 
+            addLinkToCurrentLayoutSection: (link, duration = 30) => set((state) => {
+                const currentLayoutSection = get().currentLayoutSection
+                if (!currentLayoutSection || !state.items) return state
+                const sectionItems = get().getLayoutSectionItems(currentLayoutSection) ?? []
+                const maxOrder = getMaxOrderForSection(sectionItems)
+                const newItem = PlaylistContentService.mapLinkToPlaylistItem(link, currentLayoutSection, maxOrder, duration)
+                return {
+                    items: [...state.items, newItem],
+                }
+            }),
+
             removeItems: (id) => set((state) => {
                 const items = state.items
-
                 if (!items) return state
-
                 const ids = Array.isArray(id) ? id : [id]
-
                 const newItems = items.filter((item) => !ids.includes(item.id))
+                return { items: newItems }
+            }),
 
-                return {
-                    items: newItems,
-                }
+            updateItemDuration: (id, duration) => set((state) => {
+                const items = state.items
+                if (!items) return state
+                const newItems = items.map((item) =>
+                    item.id === id ? { ...item, duration } : item
+                )
+                return { items: newItems }
             }),
         }),
         {
