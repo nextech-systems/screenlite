@@ -8,7 +8,7 @@
 		"dev": "[ -f .env ] && env-cmd -f .env tsx watch src/entrypoints/http.ts || tsx watch src/entrypoints/http.ts",
 		"lint": "eslint --fix",
 		"cli": "tsx src/entrypoints/cli.ts",
-		"start": "node --env-file=.env dist/screenlite.js",
+		"start": "node dist/entrypoints/http.js",
 		"test": "vitest --bail=1",
 		"env:sync": "node scripts/sync-env-docs.js"
 	},

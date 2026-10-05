@@ -1,0 +1,27 @@
+FROM node:slim
+
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+RUN npm install
+
+COPY . .
+
+RUN DATABASE_URL=postgresql://postgres:postgres@localhost:5432/screenlite npx prisma generate
+
+RUN npm run build
+
+ENV NODE_ENV=production
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "./scripts/db-deploy-with-reset.sh && npx swc src/generated/prisma/sql.ts src/generated/prisma/sql -d dist --strip-leading-paths && node scripts/fix-imports.js && npm run start"]

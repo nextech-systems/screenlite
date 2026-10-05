@@ -3,19 +3,16 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: ./docker/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.prod
     restart: always
     container_name: screenlite-server
     ports:
       - "${SERVER_PORT:-3000}:3000"
     volumes:
-      - ./server:/app
-      - /app/node_modules
-      - /app/src/generated/prisma
       - screenlite_storage:/app/storage
       - screenlite_server_logs:/app/logs
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_ENV=production
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET:-secret}
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/screenlite}
       - REDIS_HOST=${REDIS_HOST:-redis}
